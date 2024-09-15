@@ -58,7 +58,7 @@ namespace ChatClient.Net
                             userDisconnectEvent?.Invoke();
                             break;
                         default:
-                            Console.WriteLine("yes");
+                            Console.WriteLine("error");
                             break;
                     }
                 }

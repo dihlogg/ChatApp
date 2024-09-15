@@ -16,7 +16,7 @@ namespace ChatClient.MVVM.ViewModel
     public class MainViewModel
     {
         public ObservableCollection<UserModel> Users { get; set; }
-        public ObservableCollection<string> Messages { get; set; }
+        public ObservableCollection<MessageModel> Messages { get; set; }
 
         public RelayCommand ConnectToServerCommand { get; set; }
         public RelayCommand SendMessageCommand { get; set; }
@@ -30,7 +30,7 @@ namespace ChatClient.MVVM.ViewModel
         public MainViewModel()
         {
             Users = new ObservableCollection<UserModel>();
-            Messages = new ObservableCollection<string>();
+            Messages = new ObservableCollection<MessageModel>();
             _server = new Server();
             _server.connectedEvent += UserConnected;
             _server.msgReceivedEvent += MessageReceived;
@@ -49,7 +49,10 @@ namespace ChatClient.MVVM.ViewModel
         private void MessageReceived()
         {
             var msg = _server.packetReader.ReadMessage();
-            Application.Current.Dispatcher.Invoke(() => Messages.Add(msg));
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Messages.Add(new MessageModel { Content = msg, IsSentByMe = false });
+            });
         }
 
         private void UserConnected()

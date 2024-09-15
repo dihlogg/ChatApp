@@ -3,12 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ChatApp" xmlns:viewmodel="clr-namespace:ChatClient.MVVM.ViewModel"
+        xmlns:local="clr-namespace:ChatApp" xmlns:viewmodel="clr-namespace:ChatClient.MVVM.ViewModel" xmlns:local1="clr-namespace:ChatClient.MVVM.Core"
         mc:Ignorable="d"
-        Title="MainWindow" Height="471" Width="816">
+        Title="Chat App" Height="471" Width="816">
+
+    <Window.Resources>
+        <local1:BoolToMessageBackgroundConverter x:Key="BoolToMessageBackgroundConverter" />
+    </Window.Resources>
 
     <Window.DataContext>
-        <viewmodel:MainViewModel/>
+        <viewmodel:MainViewModel />
     </Window.DataContext>
 
     <Grid>
@@ -20,33 +24,44 @@
         <DockPanel>
             <TextBox Height="25"
                      DockPanel.Dock="Top"
-                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"/>
+                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
             <Button Height="25"
                      DockPanel.Dock="Top"
                     Content="Connect"
-                    Command="{Binding ConnectToServerCommand}"/>
+                    Command="{Binding ConnectToServerCommand}" />
             <ListView ItemsSource="{Binding Users}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Username}"/>
+                        <TextBlock Text="{Binding Username}" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
         </DockPanel>
 
         <StackPanel Grid.Column="1">
-            <ListView Height="380"
-                      ItemsSource="{Binding Messages}"/>
+            <ListView Height="380" ItemsSource="{Binding Messages}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="5"
+                        Padding="10"
+                        CornerRadius="5"
+                        Background="{Binding IsSentByMe, Converter={StaticResource BoolToMessageBackgroundConverter}}">
+                            <TextBlock Text="{Binding Content}" />
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
             <StackPanel Orientation="Horizontal">
                 <TextBox Height="55"
                          Width="545"
                          VerticalContentAlignment="Center"
-                         Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"/>
+                         Text="{Binding Message, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                         KeyDown="TextBox_KeyDown" />
                 <Button Width="55"
                         Content="Send"
-                        Command="{Binding SendMessageCommand}"/>
+                        Command="{Binding SendMessageCommand}" />
             </StackPanel>
         </StackPanel>
-
     </Grid>
 </Window>
