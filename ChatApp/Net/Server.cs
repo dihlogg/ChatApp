@@ -24,12 +24,13 @@ namespace ChatClient.Net
 
         public void ConnectToServer(string username)
         {
-            if(!_client.Connected)
+            if (!_client.Connected)
             {
-                _client.Connect("127.0.0.1", 7891);
+                //_client.Connect("192.168.1.3", 5000);
+                _client.Connect("127.0.0.1", 5000);
                 packetReader = new PacketReader(_client.GetStream());
 
-                if(!string.IsNullOrEmpty(username) )
+                if (!string.IsNullOrEmpty(username))
                 {
                     var connectPacket = new PacketBuilder();
                     connectPacket.WriteOpCode(0);

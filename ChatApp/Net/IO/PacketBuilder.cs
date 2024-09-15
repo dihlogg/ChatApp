@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Unicode;
 using System.Threading.Tasks;
 
 namespace ChatClient.Net.IO
@@ -22,13 +23,9 @@ namespace ChatClient.Net.IO
 
         public void WriteMessage(string msg)
         {
-            var msgLength = msg.Length;
-            _ms.Write(BitConverter.GetBytes(msgLength));
-            _ms.Write(Encoding.UTF8.GetBytes(msg));
-
-            //var msgLength = msg.Length;
-            //_ms.Write(BitConverter.GetBytes(msgLength));
-            //_ms.Write(Encoding.UTF8.GetBytes(msg));
+            var msgEncoding = Encoding.UTF8.GetBytes(msg);
+            _ms.Write(BitConverter.GetBytes(msgEncoding.Length));
+            _ms.Write(msgEncoding);
         }
 
         public byte[] GetPacketBytes()

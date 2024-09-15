@@ -17,6 +17,7 @@ namespace ChatClient.MVVM.ViewModel
     {
         public ObservableCollection<UserModel> Users { get; set; }
         public ObservableCollection<MessageModel> Messages { get; set; }
+        public List<string> _imageUrls;
 
         public RelayCommand ConnectToServerCommand { get; set; }
         public RelayCommand SendMessageCommand { get; set; }
@@ -31,6 +32,15 @@ namespace ChatClient.MVVM.ViewModel
         {
             Users = new ObservableCollection<UserModel>();
             Messages = new ObservableCollection<MessageModel>();
+            _imageUrls = new List<string>
+        {
+            "https://t4.ftcdn.net/jpg/03/83/25/83/360_F_383258331_D8imaEMl8Q3lf7EKU2Pi78Cn0R7KkW9o.jpg",
+            "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg",
+            "https://img.freepik.com/free-photo/handsome-confident-smiling-man-with-hands-crossed-chest_176420-18743.jpg?size=626&ext=jpg&ga=GA1.1.2008272138.1726358400&semt=ais_hybrid",
+            "https://media.istockphoto.com/id/1364917563/photo/businessman-smiling-with-arms-crossed-on-white-background.jpg?s=612x612&w=0&k=20&c=NtM9Wbs1DBiGaiowsxJY6wNCnLf0POa65rYEwnZymrM=",
+            "https://img.freepik.com/free-photo/attractive-mixed-race-male-with-positive-smile-shows-white-teeth-keeps-hands-stomach-being-high-spirit-wears-white-shirt-rejoices-positive-moments-life-people-emotions-concept_273609-15527.jpg"
+            // Add more URLs as needed
+        };
             _server = new Server();
             _server.connectedEvent += UserConnected;
             _server.msgReceivedEvent += MessageReceived;
@@ -61,12 +71,18 @@ namespace ChatClient.MVVM.ViewModel
             {
                 Username = _server.packetReader.ReadMessage(),
                 UID = _server.packetReader.ReadMessage(),
+                ImageUrl = GetNextImageUrl()
             };
 
             if (!Users.Any(x => x.UID == user.UID))
             {
                 Application.Current.Dispatcher.Invoke(() => Users.Add(user));
             }
+        }
+        private string GetNextImageUrl()
+        {
+            int index = Users.Count % _imageUrls.Count; // Cycle through the images
+            return _imageUrls[index];
         }
     }
 }

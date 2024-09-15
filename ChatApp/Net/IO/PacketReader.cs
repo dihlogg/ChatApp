@@ -24,7 +24,8 @@ namespace ChatClient.Net.IO
             _ns.Read(msgBuffer, 0, length);
 
             var msg = Encoding.UTF8.GetString(msgBuffer);
-            return msg;
+
+             return msg;
         }
     }
 }

@@ -10,5 +10,6 @@ namespace ChatClient.MVVM.Model
     {
         public string Username { get; set; }
         public string UID { get; set; }
+        public string ImageUrl { get; set; }
     }
 }
