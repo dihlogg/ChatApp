@@ -39,7 +39,7 @@ namespace ChatClient.MVVM.ViewModel
             "https://img.freepik.com/free-photo/handsome-confident-smiling-man-with-hands-crossed-chest_176420-18743.jpg?size=626&ext=jpg&ga=GA1.1.2008272138.1726358400&semt=ais_hybrid",
             "https://media.istockphoto.com/id/1364917563/photo/businessman-smiling-with-arms-crossed-on-white-background.jpg?s=612x612&w=0&k=20&c=NtM9Wbs1DBiGaiowsxJY6wNCnLf0POa65rYEwnZymrM=",
             "https://img.freepik.com/free-photo/attractive-mixed-race-male-with-positive-smile-shows-white-teeth-keeps-hands-stomach-being-high-spirit-wears-white-shirt-rejoices-positive-moments-life-people-emotions-concept_273609-15527.jpg"
-            // Add more URLs as needed
+            // Add more URLs
         };
             _server = new Server();
             _server.connectedEvent += UserConnected;
@@ -81,7 +81,7 @@ namespace ChatClient.MVVM.ViewModel
         }
         private string GetNextImageUrl()
         {
-            int index = Users.Count % _imageUrls.Count; // Cycle through the images
+            int index = Users.Count % _imageUrls.Count;
             return _imageUrls[index];
         }
     }

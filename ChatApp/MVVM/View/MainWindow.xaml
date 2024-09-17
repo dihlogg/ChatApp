@@ -3,13 +3,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ChatApp" xmlns:viewmodel="clr-namespace:ChatClient.MVVM.ViewModel" xmlns:local1="clr-namespace:ChatClient.MVVM.Core"
+        xmlns:local="clr-namespace:ChatApp"
+        xmlns:viewmodel="clr-namespace:ChatClient.MVVM.ViewModel"
+        xmlns:local1="clr-namespace:ChatClient.MVVM.Core"
         mc:Ignorable="d"
         Title="Chat App" Height="471" Width="816">
 
     <Window.Resources>
         <local1:BoolToMessageBackgroundConverter x:Key="BoolToMessageBackgroundConverter" />
-        <local1:BoolToHorizontalAlignmentConverter x:Key="BoolToHorizontalAlignmentConverter"/>
+        <local1:BoolToHorizontalAlignmentConverter x:Key="BoolToHorizontalAlignmentConverter" />
     </Window.Resources>
 
     <Window.DataContext>
@@ -22,14 +24,15 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
+        <!-- Left Panel for Users -->
         <DockPanel>
             <TextBox Height="25"
                      DockPanel.Dock="Top"
                      Text="{Binding Username, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
             <Button Height="25"
                      DockPanel.Dock="Top"
-                    Content="Connect"
-                    Command="{Binding ConnectToServerCommand}" />
+                     Content="Connect"
+                     Command="{Binding ConnectToServerCommand}" />
             <ListView ItemsSource="{Binding Users}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
@@ -38,11 +41,10 @@
                                 <!-- Circular Image -->
                                 <Ellipse Width="50" Height="50" Margin="5">
                                     <Ellipse.Fill>
-                                        <ImageBrush ImageSource="{Binding ImageUrl}" Stretch="UniformToFill"/>
+                                        <ImageBrush ImageSource="{Binding ImageUrl}" Stretch="UniformToFill" />
                                     </Ellipse.Fill>
                                 </Ellipse>
-                                <!-- Username -->
-                                <TextBlock Text="{Binding Username}" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Username}" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="Bold" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>
@@ -50,20 +52,31 @@
             </ListView>
         </DockPanel>
 
+        <!-- Right Panel for Messages -->
         <StackPanel Grid.Column="1">
             <ListView Height="380" ItemsSource="{Binding Messages}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="5"
-                        Padding="10"
-                        CornerRadius="5"
-                        Background="{Binding IsSentByMe, Converter={StaticResource BoolToMessageBackgroundConverter}}">
-                            <TextBlock Text="{Binding Content}" />
-                        </Border>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Message -->
+                            <Border Margin="5"
+                            Padding="10"
+                            CornerRadius="15"
+                            Background="{Binding IsSentByMe, Converter={StaticResource BoolToMessageBackgroundConverter}}"
+                            HorizontalAlignment="{Binding IsSentByMe, Converter={StaticResource BoolToHorizontalAlignmentConverter}}"
+                            MaxWidth="300">
+                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
+                            </Border>
+                        </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
 
+            <!-- Input Box and Send Button -->
             <StackPanel Orientation="Horizontal">
                 <TextBox Height="55"
                          Width="545"
@@ -73,6 +86,10 @@
                 <Button Width="55"
                         Content="Send"
                         Command="{Binding SendMessageCommand}" />
+                <Button Width="55"
+                        x:Name="UploadButton"
+                        Content="Choose File"
+                        Click="UploadButton_Click" />
             </StackPanel>
         </StackPanel>
     </Grid>
