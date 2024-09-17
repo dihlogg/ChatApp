@@ -35,5 +35,16 @@ namespace ChatApp
                  ((TextBox)sender).Text = string.Empty;
             }
         }
+        private void UploadButton_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            bool? response = openFileDialog.ShowDialog();
+            if (response == true)
+            {
+                string filePath = openFileDialog.FileName;
+                MessageBox.Show(filePath);
+            }
+
+        }
     }
 }
