@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net.Sockets;
 using ChatClient.Net.IO;
+using System.Windows;
 
 namespace ChatClient.Net
 {
@@ -22,56 +23,80 @@ namespace ChatClient.Net
             _client = new TcpClient();
         }
 
-        public void ConnectToServer(string username)
+        public async Task ConnectToServer(string username)
         {
             if (!_client.Connected)
             {
-                _client.Connect("192.168.1.3", 5000);
-                //_client.Connect("127.0.0.1", 5000);
-                packetReader = new PacketReader(_client.GetStream());
-
-                if (!string.IsNullOrEmpty(username))
+                try
                 {
-                    var connectPacket = new PacketBuilder();
-                    connectPacket.WriteOpCode(0);
-                    connectPacket.WriteMessage(username);
-                    _client.Client.Send(connectPacket.GetPacketBytes());
+                    await _client.ConnectAsync("127.0.0.1", 5000);
+                    packetReader = new PacketReader(_client.GetStream());
+
+                    if (!string.IsNullOrEmpty(username))
+                    {
+                        var connectPacket = new PacketBuilder();
+                        connectPacket.WriteOpCode(0);
+                        connectPacket.WriteMessage(username);
+                        await _client.Client.SendAsync(connectPacket.GetPacketBytes(), SocketFlags.None);
+                    }
+                    ReadPackets();
                 }
-                ReadPackets();
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Unable to connect to server: {ex.Message}", "Connection Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
+
         private void ReadPackets()
         {
             Task.Run(() =>
             {
                 while (true)
                 {
-                    var opcode = packetReader.ReadByte();
-                    switch (opcode)
+                    try
                     {
-                        case 1:
-                            connectedEvent?.Invoke();
-                            break;
-                        case 5:
-                            msgReceivedEvent?.Invoke();
-                            break;
-                        case 10:
-                            userDisconnectEvent?.Invoke();
-                            break;
-                        default:
-                            Console.WriteLine("error");
-                            break;
+                        var opcode = packetReader.ReadByte();
+                        switch (opcode)
+                        {
+                            case 1:
+                                Application.Current.Dispatcher.Invoke(() => connectedEvent?.Invoke());
+                                break;
+                            case 5:
+                                Application.Current.Dispatcher.Invoke(() => msgReceivedEvent?.Invoke());
+                                break;
+                            case 10:
+                                Application.Current.Dispatcher.Invoke(() => userDisconnectEvent?.Invoke());
+                                break;
+                            default:
+                                Console.WriteLine("Unknown opcode received");
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error reading packets: {ex.Message}");
+                        break;
                     }
                 }
             });
         }
 
-        public void SendMessageToServer(string message)
+        public async Task SendMessageToServer(string message)
         {
-            var messagePacket = new PacketBuilder();
-            messagePacket.WriteOpCode(5);
-            messagePacket.WriteMessage(message);
-            _client.Client.Send(messagePacket.GetPacketBytes());
+            try
+            {
+                var messagePacket = new PacketBuilder();
+                messagePacket.WriteOpCode(5);
+                messagePacket.WriteMessage(message);
+                await _client.Client.SendAsync(messagePacket.GetPacketBytes(), SocketFlags.None);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error sending message: {ex.Message}", "Send Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
