@@ -1,12 +1,16 @@
 ﻿using ChatClient.MVVM.Core;
 using ChatClient.MVVM.Model;
 using ChatClient.Net;
+using ChatClient.Net.IO;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ChatClient.MVVM.ViewModel
 {
@@ -18,6 +22,8 @@ namespace ChatClient.MVVM.ViewModel
 
         public RelayCommand ConnectToServerCommand { get; set; }
         public RelayCommand SendMessageCommand { get; set; }
+        public RelayCommand SendFileCommand { get; set; }
+        public ICommand OpenFileCommand { get; set; }
 
         public string Username { get; set; }
         public string Message { get; set; }
@@ -44,10 +50,78 @@ namespace ChatClient.MVVM.ViewModel
             _server.msgReceivedEvent += MessageReceived;
             _server.userDisconnectEvent += RemoveUser;
 
+            SendFileCommand = new RelayCommand(async obj =>
+            {
+                if (obj is string filePath && !string.IsNullOrEmpty(filePath))
+                {
+                    await SendFile(filePath);
+                }
+            });
+
+            OpenFileCommand = new RelayCommand(OpenFile);
+
             ConnectToServerCommand = new RelayCommand(async o => await _server.ConnectToServer(Username),
                                                        o => !string.IsNullOrEmpty(Username));
             SendMessageCommand = new RelayCommand(async o => await _server.SendMessageToServer(Message),
                                                   o => !string.IsNullOrEmpty(Message));
+        }
+
+        private async Task SendFile(string filePath)
+        {
+            try
+            {
+                byte[] fileData = await File.ReadAllBytesAsync(filePath); // Đọc file thành mã nhị phân
+                string fileName = Path.GetFileName(filePath);
+
+                await _server.SendFileToServer(fileName, fileData); // Gửi file qua server
+
+                // Cập nhật giao diện
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Messages.Add(new MessageModel
+                    {
+                        Content = $"[File Sent: {fileName}]",
+                        IsFile = true,
+                        FilePath = filePath,
+                        IsSentByMe = true
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error sending file: {ex.Message}", "File Send Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+        private async void OpenFile(object obj)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string filePath = openFileDialog.FileName;
+                await SendFile(filePath);
+            }
+        }
+
+        private async Task SendMessage()
+        {
+            await _server.SendMessageToServer(Message);
+            Messages.Add(new MessageModel
+            {
+                Content = Message,
+                IsSentByMe = true,
+                IsFile = false
+            });
+            Message = string.Empty;
+        }
+        private void MessageReceived()
+        {
+            var msg = _server.packetReader.ReadMessage();
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Messages.Add(new MessageModel { Content = msg, IsSentByMe = false });
+            });
         }
 
         private void UserConnected()
@@ -65,15 +139,6 @@ namespace ChatClient.MVVM.ViewModel
             {
                 Application.Current.Dispatcher.Invoke(() => Users.Add(user));
             }
-        }
-
-        private void MessageReceived()
-        {
-            var msg = _server.packetReader.ReadMessage();
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Messages.Add(new MessageModel { Content = msg, IsSentByMe = false });
-            });
         }
 
         private void RemoveUser()

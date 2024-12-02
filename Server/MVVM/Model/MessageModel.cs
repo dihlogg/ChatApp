@@ -11,5 +11,7 @@ namespace Server.MVVM.Model
         public string Content { get; set; }
         public bool IsSentByMe { get; set; }
         public string Sender { get; set; }
+        public bool IsFile { get; set; } // Nếu là file thì true
+        public string FilePath { get; set; } // Đường dẫn file
     }
 }

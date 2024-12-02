@@ -7,29 +7,41 @@ using System.Threading.Tasks;
 
 namespace Server.Net.IO
 {
-    internal class PacketBuilder
+    public class PacketBuilder
     {
-        MemoryStream _ms;
+        private MemoryStream _stream;
+
         public PacketBuilder()
         {
-            _ms = new MemoryStream();
+            _stream = new MemoryStream();
         }
 
         public void WriteOpCode(byte opcode)
         {
-            _ms.WriteByte(opcode);
+            _stream.WriteByte(opcode);
         }
 
-        public void WriteMessage(string msg)
+        public void WriteMessage(string message)
         {
-            var msgEncoding = Encoding.UTF8.GetBytes(msg);
-            _ms.Write(BitConverter.GetBytes(msgEncoding.Length));
-            _ms.Write(msgEncoding);
+            byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+            _stream.Write(BitConverter.GetBytes(messageBytes.Length), 0, 4);
+            _stream.Write(messageBytes, 0, messageBytes.Length);
+        }
+
+        public void WriteInt(int value)
+        {
+            _stream.Write(BitConverter.GetBytes(value), 0, 4);
+        }
+
+        public void WriteBytes(byte[] data)
+        {
+            _stream.Write(data, 0, data.Length);
         }
 
         public byte[] GetPacketBytes()
         {
-            return _ms.ToArray();
+            return _stream.ToArray();
         }
     }
+
 }

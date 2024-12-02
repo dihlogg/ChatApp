@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Imaging;
+using Server.MVVM.Model;
 using Server.Net.IO;
 
 namespace Server.Net
@@ -13,6 +17,7 @@ namespace Server.Net
     public class Client
     {
         public string Username { get; set; }
+        public ObservableCollection<MessageModel> Messages { get; set; }
         public Guid UID { get; set; }
         public TcpClient ClientSocket { get; set; }
         public string IPAddress { get; set; }
@@ -52,10 +57,20 @@ namespace Server.Net
                             var msg = _packetReader.ReadMessage();
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                _mainWindow.BroadcastMessage($"[{DateTime.Now:HH:mm:ss}] [{IPAddress}] [{Username}]: {msg}");
+                                _mainWindow.BroadcastMessage($"[{IPAddress}] [{Username}]: {msg}");
                             });
                             break;
+                        case 6:
+                            // Nhận file từ client
+                            string fileName = _packetReader.ReadMessage();
+                            int fileSize = _packetReader.ReadInt32();
+                            byte[] fileData = _packetReader.ReadBytes(fileSize);
 
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                _mainWindow.BroadcastFile(fileName, fileData, Username);
+                            });
+                            break;
                         default:
                             break;
                     }
@@ -71,7 +86,49 @@ namespace Server.Net
                 }
             }
         }
+        private void ProcessServerPackets()
+        {
+            while (true)
+            {
+                var opcode = _packetReader.ReadByte();
+
+                switch (opcode)
+                {
+                    case 6:  // Nhận file từ server
+                        string fileName = _packetReader.ReadMessage();
+                        int fileSize = _packetReader.ReadInt32();  // Đọc kích thước file
+                        byte[] fileData = _packetReader.ReadBytes(fileSize);  // Đọc dữ liệu file
+
+                        // Lưu file vào thư mục tạm
+                        string tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
+                        File.WriteAllBytes(tempFilePath, fileData);
+
+                        bool isImage = IsImageFile(tempFilePath);  // Kiểm tra xem file có phải hình ảnh không
+
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            Messages.Add(new MessageModel
+                            {
+                                Content = isImage ? "Image Received" : $"File Received: {fileName}",
+                                IsFile = true,
+                                FilePath = tempFilePath,
+                                IsSentByMe = false
+                            });
+                        });
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
 
 
+        private bool IsImageFile(string filePath)
+        {
+            string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+            string extension = Path.GetExtension(filePath)?.ToLower();
+            return imageExtensions.Contains(extension);
+        }
     }
 }

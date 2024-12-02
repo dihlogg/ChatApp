@@ -8,24 +8,44 @@ using System.Threading.Tasks;
 
 namespace ChatClient.Net.IO
 {
-    internal class PacketReader : BinaryReader
+    public class PacketReader : BinaryReader
     {
-        private NetworkStream _ns;
-        public PacketReader(NetworkStream ns) : base(ns)
+        private NetworkStream _stream;
+
+        public PacketReader(NetworkStream stream) : base(stream)
         {
-            _ns = ns;
+            _stream = stream;
         }
 
         public string ReadMessage()
         {
-            byte[] msgBuffer;
-            var length = ReadInt32();
-            msgBuffer = new byte[length];
-            _ns.Read(msgBuffer, 0, length);
+            int length = ReadInt32();
+            byte[] buffer = new byte[length];
+            _stream.Read(buffer, 0, length);
+            return Encoding.UTF8.GetString(buffer);
+        }
 
-            var msg = Encoding.UTF8.GetString(msgBuffer);
+        public int ReadInt32()
+        {
+            byte[] buffer = ReadBytes(4);
+            return BitConverter.ToInt32(buffer, 0);
+        }
 
-             return msg;
+        public byte[] ReadBytes(int count)
+        {
+            byte[] buffer = new byte[count];
+            int bytesRead = 0;
+            while (bytesRead < count)
+            {
+                int read = _stream.Read(buffer, bytesRead, count - bytesRead);
+                if (read <= 0)
+                {
+                    throw new EndOfStreamException("Không thể đọc đủ dữ liệu từ luồng");
+                }
+                bytesRead += read;
+            }
+            return buffer;
         }
     }
+
 }

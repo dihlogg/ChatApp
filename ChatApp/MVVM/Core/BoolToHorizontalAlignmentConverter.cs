@@ -27,11 +27,15 @@ namespace ChatClient.MVVM.Core
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool boolValue)
+            bool isFile = (bool)value;
+            bool invertResult = parameter != null && parameter.ToString().ToLower() == "false";
+
+            if (invertResult)
             {
-                return boolValue ? Visibility.Visible : Visibility.Collapsed;
+                return !isFile ? Visibility.Visible : Visibility.Collapsed;
             }
-            return Visibility.Collapsed;
+
+            return isFile ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -39,6 +43,7 @@ namespace ChatClient.MVVM.Core
             throw new NotImplementedException();
         }
     }
+
     public class BoolToBackgroundConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

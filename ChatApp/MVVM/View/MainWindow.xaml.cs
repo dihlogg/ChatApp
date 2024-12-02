@@ -1,4 +1,5 @@
 ﻿using ChatClient.MVVM.ViewModel;
+using Microsoft.Win32;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,9 +43,17 @@ namespace ChatApp
             if (response == true)
             {
                 string filePath = openFileDialog.FileName;
-                MessageBox.Show(filePath);
-            }
 
+                // Gửi file lên server
+                var viewModel = DataContext as MainViewModel;
+                if (viewModel != null)
+                {
+                    if (viewModel != null && viewModel.SendFileCommand.CanExecute(filePath))
+                    {
+                        viewModel.SendFileCommand.Execute(filePath);
+                    }
+                }
+            }
         }
     }
 }

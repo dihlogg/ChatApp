@@ -58,7 +58,6 @@ namespace Server
                         Dispatcher.Invoke(() =>
                         {
                             _users.Add(newClient);
-                            //AddToLog($"Client connected from IP {((IPEndPoint)newClient.ClientSocket.Client.RemoteEndPoint).Address} with username is {newClient.Username}");
                             BroadcastConnection();
                         });
                     }
@@ -100,6 +99,27 @@ namespace Server
                     {
                         AddToLog($"Error accepting client: {ex.Message}");
                     }
+                }
+            }
+        }
+        public void BroadcastFile(string fileName, byte[] fileData, string senderUsername)
+        {
+            AddToLog($"File '{fileName}' received from {senderUsername}");
+
+            foreach (var user in _users)
+            {
+                try
+                {
+                    var packet = new PacketBuilder();
+                    packet.WriteOpCode(7); // OpCode cho phát tán file
+                    packet.WriteMessage(fileName); // Tên file
+                    packet.WriteBytes(fileData);   // Nội dung file
+
+                    user.ClientSocket.Client.Send(packet.GetPacketBytes());
+                }
+                catch (Exception ex)
+                {
+                    AddToLog($"Error broadcasting file: {ex.Message}");
                 }
             }
         }
@@ -193,8 +213,6 @@ namespace Server
                         AddToLog($"Error broadcasting disconnect: {ex.Message}");
                     }
                 }
-
-                BroadcastMessage($"[{disconnectedUser.Username}] Disconnected!");
             }
         }
 

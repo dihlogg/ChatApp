@@ -86,32 +86,27 @@
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Sent Message -->
                             <Border Margin="5"
                         Padding="10"
                         CornerRadius="15"
                         Background="{Binding IsSentByMe, Converter={StaticResource BoolToBackgroundConverter}}"
-                        HorizontalAlignment="{Binding IsSentByMe, Converter={StaticResource BoolToHorizontalAlignmentConverter}}"
                         MaxWidth="300">
-                                <Border.BorderBrush>
-                                    <SolidColorBrush Color="LightBlue" />
-                                </Border.BorderBrush>
-                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
-                            </Border>
+                                <StackPanel>
+                                    <!-- Hiển thị nội dung tin nhắn -->
+                                    <TextBlock Text="{Binding Content}" FontWeight="Bold"
+                                   Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
 
-                            <!-- Received Message -->
-                            <Border Margin="5"
-                        Padding="10"
-                        CornerRadius="15"
-                        Background="LightBlue"
-                        HorizontalAlignment="Left"
-                        Visibility="{Binding IsSentByMe, Converter={StaticResource BoolToVisibilityConverter}}"
-                        MaxWidth="300">
-                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" />
+                                    <!-- Hiển thị hình ảnh nếu tin nhắn là file ảnh -->
+                                    <Image Source="{Binding FilePath}" MaxWidth="250" MaxHeight="200"
+                               Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}"
+                               Margin="5" />
+
+                                    <!-- Nút mở file nếu không phải file ảnh -->
+                                    <Button Content="Open File"
+                                Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding FilePath}" />
+                                </StackPanel>
                             </Border>
                         </Grid>
                     </DataTemplate>
@@ -130,6 +125,7 @@
                 <Button Width="55"
                     x:Name="UploadButton"
                     Style="{StaticResource IconButtonStyle}"
+                    Command="{Binding SendFileCommand}" CommandParameter="{Binding SelectedFilePath}"
                     Click="UploadButton_Click">
                     <Button.Content>
                         <Path Data="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"

@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using ChatClient.Net.IO;
 using System.Windows;
+using System.IO;
+using ChatClient.MVVM.Model;
+using System.Collections.ObjectModel;
 
 namespace ChatClient.Net
 {
@@ -13,10 +16,13 @@ namespace ChatClient.Net
     {
         TcpClient _client;
         public PacketReader packetReader;
+        public ObservableCollection<MessageModel> Messages { get; set; }
+
 
         public event Action connectedEvent;
         public event Action msgReceivedEvent;
         public event Action userDisconnectEvent;
+        public event Action fileReceivedEvent;
 
         public Server()
         {
@@ -48,7 +54,6 @@ namespace ChatClient.Net
                 }
             }
         }
-
         private void ReadPackets()
         {
             Task.Run(() =>
@@ -66,6 +71,9 @@ namespace ChatClient.Net
                             case 5:
                                 Application.Current.Dispatcher.Invoke(() => msgReceivedEvent?.Invoke());
                                 break;
+                            case 6:
+                                ReceiveFile();
+                                break;
                             case 10:
                                 Application.Current.Dispatcher.Invoke(() => userDisconnectEvent?.Invoke());
                                 break;
@@ -77,12 +85,51 @@ namespace ChatClient.Net
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error reading packets: {ex.Message}");
-                        break;
+                        break; // Thoát vòng lặp nếu có lỗi
                     }
                 }
             });
         }
+        public async Task SendFileToServer(string fileName, byte[] fileData)
+        {
+            try
+            {
+                var filePacket = new PacketBuilder();
+                filePacket.WriteOpCode(6); // OpCode 6 dành cho gửi file
+                filePacket.WriteMessage(fileName);
+                filePacket.WriteBytes(fileData);
 
+                await _client.Client.SendAsync(filePacket.GetPacketBytes(), SocketFlags.None);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error sending file: {ex.Message}", "File Send Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ReceiveFile()
+        {
+            string fileName = packetReader.ReadMessage(); // Nhận tên file
+            int fileSize = packetReader.ReadInt32(); // Nhận kích thước file
+            byte[] fileData = packetReader.ReadBytes(fileSize); // Nhận dữ liệu file
+
+            string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
+            File.WriteAllBytes(savePath, fileData); // Lưu file
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Messages.Add(new MessageModel
+                {
+                    Content = $"[File Received: {fileName}]",
+                    IsFile = true,
+                    FilePath = savePath,
+                    IsSentByMe = false
+                });
+            });
+
+            MessageBox.Show($"File {fileName} received and saved to Desktop", "File Received", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
         public async Task SendMessageToServer(string message)
         {
             try
