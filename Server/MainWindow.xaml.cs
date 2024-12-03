@@ -104,31 +104,6 @@ namespace Server
                 }
             }
         }
-        public void BroadcastFile(string fileName, byte[] fileData, string senderUsername)
-        {
-            AddToLog($"File '{fileName}' received from {senderUsername}");
-
-            foreach (var user in _users)
-            {
-                if (user.Username != senderUsername) // Đảm bảo không gửi lại cho chính client đã gửi
-                {
-                    try
-                    {
-                        var packet = new PacketBuilder();
-                        packet.WriteOpCode(6); // OpCode cho phát tán file
-                        packet.WriteMessage(fileName); // Tên file
-                        packet.WriteBytes(fileData);   // Nội dung file
-
-                        user.ClientSocket.Client.Send(packet.GetPacketBytes());
-                    }
-                    catch (Exception ex)
-                    {
-                        AddToLog($"Error broadcasting file: {ex.Message}");
-                    }
-                }
-            }
-        }
-
         private void StopServer()
         {
             _isServerRunning = false;
@@ -174,7 +149,6 @@ namespace Server
 
         public void BroadcastMessage(string message)
         {
-            // Chỉ log một lần
             AddToLog(message);
 
             foreach (var user in _users)
@@ -192,7 +166,32 @@ namespace Server
                 }
             }
         }
+        public void BroadcastFile(string fileName, byte[] fileData, string senderUsername)
+        {
+            AddToLog($"File '{fileName}' received from {senderUsername}");
+            foreach (var user in _users)
+            {
+                if (user.Username != senderUsername)
+                {
+                    try
+                    {
+                        var packet = new PacketBuilder();
+                        packet.WriteOpCode(6);
+                        packet.WriteMessage(fileName);
+                        packet.WriteInt32(fileData.Length);
+                        packet.WriteBytes(fileData);
 
+                        //user.ClientSocket.Client.Send(packet.GetPacketBytes());
+                        NetworkStream stream = user.ClientSocket.GetStream();
+                        stream.Write(packet.GetPacketBytes(), 0, packet.GetPacketBytes().Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        AddToLog($"Error broadcasting file: {ex.Message}");
+                    }
+                }
+            }
+        }
         public void BroadcastDisconnect(string uid)
         {
             var disconnectedUser = _users.FirstOrDefault(x => x.UID.ToString() == uid);

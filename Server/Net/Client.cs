@@ -61,22 +61,21 @@ namespace Server.Net
                                 _mainWindow.BroadcastMessage($"[{IPAddress}] [{Username}]: {msg}");
                             });
                             break;
-                        case 6:  // Nhận file từ client
-                            string fileName = _packetReader.ReadMessage();
+                        case 6:
+                            //Nhận file từ client
+                        string fileName = _packetReader.ReadMessage();
                             int fileSize = _packetReader.ReadInt32();
 
-                            // Kiểm tra kích thước file
                             if (fileSize <= 0 || fileSize > 100 * 1024 * 1024)
                                 throw new InvalidDataException($"Invalid file size: {fileSize}");
 
-                            // Đọc dữ liệu file
                             byte[] fileData = _packetReader.ReadBytes(fileSize);
 
                             // Lưu file vào thư mục tạm
                             string tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
                             File.WriteAllBytes(tempFilePath, fileData);
 
-                            bool isImage = IsImageFile(tempFilePath);  // Kiểm tra xem file có phải hình ảnh không
+                            bool isImage = IsImageFile(tempFilePath);
 
                             // Thêm thông báo vào giao diện
                             Application.Current.Dispatcher.Invoke(() =>

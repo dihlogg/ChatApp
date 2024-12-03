@@ -1,10 +1,12 @@
-﻿using ChatClient.MVVM.Core;
+﻿using ChatClient.Helpers;
+using ChatClient.MVVM.Core;
 using ChatClient.MVVM.Model;
 using ChatClient.Net;
 using ChatClient.Net.IO;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,6 +20,14 @@ namespace ChatClient.MVVM.ViewModel
     {
         public ObservableCollection<UserModel> Users { get; set; }
         public ObservableCollection<MessageModel> Messages { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public List<string> _imageUrls;
 
         public RelayCommand ConnectToServerCommand { get; set; }
@@ -49,6 +59,7 @@ namespace ChatClient.MVVM.ViewModel
             _server.connectedEvent += UserConnected;
             _server.msgReceivedEvent += MessageReceived;
             _server.userDisconnectEvent += RemoveUser;
+            _server.fileReceivedEvent += ReceiveFile;
 
             SendFileCommand = new RelayCommand(async obj =>
             {
@@ -83,7 +94,8 @@ namespace ChatClient.MVVM.ViewModel
                         Content = $"[File Sent: {fileName}]",
                         IsFile = true,
                         FilePath = filePath,
-                        IsSentByMe = true
+                        IsSentByMe = true,
+                        bitmapImage = ImageConvertByHelpers.ConvertByteArrayToBitmapImage(fileData),
                     });
                 });
             }
@@ -102,6 +114,64 @@ namespace ChatClient.MVVM.ViewModel
                 string filePath = openFileDialog.FileName;
                 await SendFile(filePath);
             }
+        }
+        private void ReceiveFile()
+        {
+            try
+            {
+                string fileName = _server.packetReader.ReadMessage();
+                int fileSize = _server.packetReader.ReadInt32();
+                byte[] fileData = _server.packetReader.ReadBytes(fileSize);
+
+                string tempPath = Path.Combine(Path.GetTempPath(), fileName);
+                File.WriteAllBytes(tempPath, fileData);
+
+                if (Messages == null)
+                {
+                    Messages = new ObservableCollection<MessageModel>();
+                }
+
+                // Kiểm tra có phải file ảnh không
+                bool isImage = IsImageFile(tempPath);
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Messages.Add(new MessageModel
+                    {
+                        Content = isImage ? "Image Received" : $"File Received: {fileName}",
+                        IsFile = true,
+                        FilePath = tempPath,
+                        IsSentByMe = false,
+                        bitmapImage = ImageConvertByHelpers.ConvertByteArrayToBitmapImage(fileData),
+                    });
+                });
+                Console.WriteLine($"Received file: {fileName}, Size: {fileSize}");
+                var temp = Messages.ToList();
+                Messages.Clear();
+                foreach (var image in temp)
+                {
+                    Messages.Add(image);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ReceiveFile: {ex.Message}");
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"Error receiving file: {ex.Message}",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                });
+            }
+        }
+
+
+        private bool IsImageFile(string filePath)
+        {
+            string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif" };
+            string extension = Path.GetExtension(filePath)?.ToLower();
+            return imageExtensions.Contains(extension);
         }
 
         private async Task SendMessage()

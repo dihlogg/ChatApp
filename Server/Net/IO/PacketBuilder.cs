@@ -32,7 +32,11 @@ namespace Server.Net.IO
         {
             _stream.Write(BitConverter.GetBytes(value), 0, 4);
         }
-
+        public void WriteInt32(int value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value); // Chuyển int sang byte[]
+            _stream.Write(bytes, 0, bytes.Length); // Ghi vào stream
+        }
         public void WriteBytes(byte[] data)
         {
             _stream.Write(data, 0, data.Length);

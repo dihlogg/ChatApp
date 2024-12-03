@@ -1,5 +1,7 @@
-﻿using ChatClient.MVVM.ViewModel;
+﻿using ChatClient.MVVM.Model;
+using ChatClient.MVVM.ViewModel;
 using Microsoft.Win32;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,9 +20,12 @@ namespace ChatApp
     /// </summary>
     public partial class MainWindow : Window
     {
+        public ObservableCollection<MessageModel> Messages { get; set; }
+
         public MainWindow()
         {
             InitializeComponent();
+            Messages = new ObservableCollection<MessageModel>();
         }
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
         {

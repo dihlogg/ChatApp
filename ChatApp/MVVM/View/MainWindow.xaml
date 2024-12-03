@@ -10,6 +10,7 @@
         Title="Chat App" Height="471" Width="816">
 
     <Window.Resources>
+        <viewmodel:MainViewModel x:Key="MainViewModel"/>
         <local1:BoolToHorizontalAlignmentConverter x:Key="BoolToHorizontalAlignmentConverter"/>
         <local1:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <local1:BoolToBackgroundConverter x:Key="BoolToBackgroundConverter"/>
@@ -90,16 +91,25 @@
                         Padding="10"
                         CornerRadius="15"
                         Background="{Binding IsSentByMe, Converter={StaticResource BoolToBackgroundConverter}}"
-                        MaxWidth="400">
+                        MaxWidth="450">
                                 <StackPanel>
                                     <!-- Hiển thị nội dung tin nhắn -->
-                                    <TextBlock Text="{Binding Content}" FontWeight="Bold"
-                                   Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
-
+                                    <TextBlock Text="{Binding Content}" FontWeight="Bold"/>
                                     <!-- Hiển thị hình ảnh nếu tin nhắn là file ảnh -->
-                                    <Image Source="{Binding FilePath}" MaxWidth="250" MaxHeight="200"
-                               Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}"
-                               Margin="5" />
+                                    <StackPanel>
+                                        <Image Source="{Binding bitmapImage}"
+                                            MaxWidth="250"
+                                            MaxHeight="200"
+                                            Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            Margin="5"
+                                            Stretch="Uniform">
+                                            <Image.Effect>
+                                                <DropShadowEffect BlurRadius="5"
+                                                ShadowDepth="2"
+                                                Opacity="0.3"/>
+                                            </Image.Effect>
+                                        </Image>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -119,7 +129,7 @@
                 <Button Width="55"
                     x:Name="UploadButton"
                     Style="{StaticResource IconButtonStyle}"
-                    Command="{Binding SendFileCommand}" CommandParameter="{Binding SelectedFilePath}"
+                    Command="{Binding SendFileCommand}"
                     Click="UploadButton_Click">
                     <Button.Content>
                         <Path Data="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"

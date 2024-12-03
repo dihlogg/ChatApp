@@ -9,10 +9,13 @@ using System.Windows;
 using System.IO;
 using ChatClient.MVVM.Model;
 using System.Collections.ObjectModel;
+using System.Windows.Media.Imaging;
+using ChatClient.Helpers;
+using System.ComponentModel;
 
 namespace ChatClient.Net
 {
-    internal class Server
+    internal class Server : INotifyPropertyChanged
     {
         TcpClient _client;
         public PacketReader packetReader;
@@ -23,6 +26,12 @@ namespace ChatClient.Net
         public event Action msgReceivedEvent;
         public event Action userDisconnectEvent;
         public event Action fileReceivedEvent;
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public Server()
         {
@@ -72,7 +81,7 @@ namespace ChatClient.Net
                                 Application.Current.Dispatcher.Invoke(() => msgReceivedEvent?.Invoke());
                                 break;
                             case 6:
-                                ReceiveFile();
+                                Application.Current.Dispatcher.Invoke(() => fileReceivedEvent?.Invoke());
                                 break;
                             case 10:
                                 Application.Current.Dispatcher.Invoke(() => userDisconnectEvent?.Invoke());
@@ -85,7 +94,7 @@ namespace ChatClient.Net
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error reading packets: {ex.Message}");
-                        break; // Thoát vòng lặp nếu có lỗi
+                        break;
                     }
                 }
             });
@@ -95,10 +104,10 @@ namespace ChatClient.Net
             try
             {
                 var filePacket = new PacketBuilder();
-                filePacket.WriteOpCode(6); // OpCode dành cho gửi file
-                filePacket.WriteMessage(fileName); // Ghi tên file
-                filePacket.WriteInt32(fileData.Length); // Ghi kích thước file
-                filePacket.WriteBytes(fileData); // Ghi dữ liệu file
+                filePacket.WriteOpCode(6);
+                filePacket.WriteMessage(fileName);
+                filePacket.WriteInt32(fileData.Length);
+                filePacket.WriteBytes(fileData);
 
                 await _client.Client.SendAsync(filePacket.GetPacketBytes(), SocketFlags.None); // Gửi gói tin
             }
@@ -107,30 +116,6 @@ namespace ChatClient.Net
                 MessageBox.Show($"Error sending file: {ex.Message}", "File Send Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-
-        private void ReceiveFile()
-        {
-            string fileName = packetReader.ReadMessage(); // Nhận tên file
-            int fileSize = packetReader.ReadInt32(); // Nhận kích thước file
-            byte[] fileData = packetReader.ReadBytes(fileSize); // Nhận dữ liệu file
-
-            string savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
-            File.WriteAllBytes(savePath, fileData); // Lưu file
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Messages.Add(new MessageModel
-                {
-                    Content = $"[File Received: {fileName}]",
-                    IsFile = true,
-                    FilePath = savePath,
-                    IsSentByMe = false
-                });
-            });
-
-            MessageBox.Show($"File {fileName} received and saved to Desktop", "File Received", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         public async Task SendMessageToServer(string message)
         {
