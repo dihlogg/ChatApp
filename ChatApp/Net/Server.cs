@@ -95,11 +95,12 @@ namespace ChatClient.Net
             try
             {
                 var filePacket = new PacketBuilder();
-                filePacket.WriteOpCode(6); // OpCode 6 dành cho gửi file
-                filePacket.WriteMessage(fileName);
-                filePacket.WriteBytes(fileData);
+                filePacket.WriteOpCode(6); // OpCode dành cho gửi file
+                filePacket.WriteMessage(fileName); // Ghi tên file
+                filePacket.WriteInt32(fileData.Length); // Ghi kích thước file
+                filePacket.WriteBytes(fileData); // Ghi dữ liệu file
 
-                await _client.Client.SendAsync(filePacket.GetPacketBytes(), SocketFlags.None);
+                await _client.Client.SendAsync(filePacket.GetPacketBytes(), SocketFlags.None); // Gửi gói tin
             }
             catch (Exception ex)
             {
@@ -107,6 +108,7 @@ namespace ChatClient.Net
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
         private void ReceiveFile()
         {

@@ -28,6 +28,7 @@ namespace Server.Net
         {
             ClientSocket = client;
             UID = Guid.NewGuid();
+            Messages = new ObservableCollection<MessageModel>();
             _packetReader = new PacketReader(ClientSocket.GetStream());
             _mainWindow = (MainWindow)Application.Current.MainWindow;
 
@@ -38,7 +39,7 @@ namespace Server.Net
 
             Application.Current.Dispatcher.Invoke(() =>
             {
-                _mainWindow.BroadcastMessage($"New client connected from IP Address {IPAddress} with {Username}");
+                _mainWindow.BroadcastMessage($"New client connected from IP Address {IPAddress} with Username {Username}");
             });
 
             Task.Run(() => Process());
@@ -60,16 +61,37 @@ namespace Server.Net
                                 _mainWindow.BroadcastMessage($"[{IPAddress}] [{Username}]: {msg}");
                             });
                             break;
-                        case 6:
-                            // Nhận file từ client
+                        case 6:  // Nhận file từ client
                             string fileName = _packetReader.ReadMessage();
                             int fileSize = _packetReader.ReadInt32();
+
+                            // Kiểm tra kích thước file
+                            if (fileSize <= 0 || fileSize > 100 * 1024 * 1024)
+                                throw new InvalidDataException($"Invalid file size: {fileSize}");
+
+                            // Đọc dữ liệu file
                             byte[] fileData = _packetReader.ReadBytes(fileSize);
 
+                            // Lưu file vào thư mục tạm
+                            string tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
+                            File.WriteAllBytes(tempFilePath, fileData);
+
+                            bool isImage = IsImageFile(tempFilePath);  // Kiểm tra xem file có phải hình ảnh không
+
+                            // Thêm thông báo vào giao diện
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                _mainWindow.BroadcastFile(fileName, fileData, Username);
+                                _mainWindow.Messages.Add(new MessageModel
+                                {
+                                    Content = isImage ? "Image Received" : $"File Received: {fileName}",
+                                    IsFile = true,
+                                    FilePath = tempFilePath,
+                                    IsSentByMe = false
+                                });
                             });
+
+                            // Gửi file đến các client khác
+                            _mainWindow.BroadcastFile(fileName, fileData, Username);
                             break;
                         default:
                             break;
@@ -86,43 +108,6 @@ namespace Server.Net
                 }
             }
         }
-        private void ProcessServerPackets()
-        {
-            while (true)
-            {
-                var opcode = _packetReader.ReadByte();
-
-                switch (opcode)
-                {
-                    case 6:  // Nhận file từ server
-                        string fileName = _packetReader.ReadMessage();
-                        int fileSize = _packetReader.ReadInt32();  // Đọc kích thước file
-                        byte[] fileData = _packetReader.ReadBytes(fileSize);  // Đọc dữ liệu file
-
-                        // Lưu file vào thư mục tạm
-                        string tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
-                        File.WriteAllBytes(tempFilePath, fileData);
-
-                        bool isImage = IsImageFile(tempFilePath);  // Kiểm tra xem file có phải hình ảnh không
-
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            Messages.Add(new MessageModel
-                            {
-                                Content = isImage ? "Image Received" : $"File Received: {fileName}",
-                                IsFile = true,
-                                FilePath = tempFilePath,
-                                IsSentByMe = false
-                            });
-                        });
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-        }
-
 
         private bool IsImageFile(string filePath)
         {

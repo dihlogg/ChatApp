@@ -33,17 +33,21 @@ namespace Server.Net.IO
 
         public byte[] ReadBytes(int count)
         {
+            if (count <= 0 || count > 100 * 1024 * 1024) // Giới hạn 100MB
+                throw new ArgumentOutOfRangeException(nameof(count), "Invalid byte count requested");
+
             byte[] buffer = new byte[count];
             int bytesRead = 0;
+
             while (bytesRead < count)
             {
                 int read = _stream.Read(buffer, bytesRead, count - bytesRead);
-                if (read <= 0)
-                {
-                    throw new EndOfStreamException("Không thể đọc đủ dữ liệu từ luồng");
-                }
+                if (read == 0)
+                    throw new EndOfStreamException("Stream ended before reading all bytes");
+
                 bytesRead += read;
             }
+
             return buffer;
         }
     }

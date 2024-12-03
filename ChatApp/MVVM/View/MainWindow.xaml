@@ -90,7 +90,7 @@
                         Padding="10"
                         CornerRadius="15"
                         Background="{Binding IsSentByMe, Converter={StaticResource BoolToBackgroundConverter}}"
-                        MaxWidth="300">
+                        MaxWidth="400">
                                 <StackPanel>
                                     <!-- Hiển thị nội dung tin nhắn -->
                                     <TextBlock Text="{Binding Content}" FontWeight="Bold"
@@ -100,12 +100,6 @@
                                     <Image Source="{Binding FilePath}" MaxWidth="250" MaxHeight="200"
                                Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}"
                                Margin="5" />
-
-                                    <!-- Nút mở file nếu không phải file ảnh -->
-                                    <Button Content="Open File"
-                                Visibility="{Binding IsFile, Converter={StaticResource BoolToVisibilityConverter}}"
-                                Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                CommandParameter="{Binding FilePath}" />
                                 </StackPanel>
                             </Border>
                         </Grid>

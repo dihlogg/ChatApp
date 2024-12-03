@@ -25,12 +25,14 @@ namespace Server
         private ObservableCollection<Client> _users;
         private TcpListener _listener;
         private bool _isServerRunning;
+        public ObservableCollection<MessageModel> Messages { get; set; }
 
         public MainWindow()
         {
-            InitializeComponent();
+            InitializeComponent();;
             _users = new ObservableCollection<Client>();
             UserListBox.ItemsSource = _users;
+            Messages = new ObservableCollection<MessageModel>();
         }
 
         private async void StartButton_Click(object sender, RoutedEventArgs e)
@@ -108,18 +110,21 @@ namespace Server
 
             foreach (var user in _users)
             {
-                try
+                if (user.Username != senderUsername) // Đảm bảo không gửi lại cho chính client đã gửi
                 {
-                    var packet = new PacketBuilder();
-                    packet.WriteOpCode(7); // OpCode cho phát tán file
-                    packet.WriteMessage(fileName); // Tên file
-                    packet.WriteBytes(fileData);   // Nội dung file
+                    try
+                    {
+                        var packet = new PacketBuilder();
+                        packet.WriteOpCode(6); // OpCode cho phát tán file
+                        packet.WriteMessage(fileName); // Tên file
+                        packet.WriteBytes(fileData);   // Nội dung file
 
-                    user.ClientSocket.Client.Send(packet.GetPacketBytes());
-                }
-                catch (Exception ex)
-                {
-                    AddToLog($"Error broadcasting file: {ex.Message}");
+                        user.ClientSocket.Client.Send(packet.GetPacketBytes());
+                    }
+                    catch (Exception ex)
+                    {
+                        AddToLog($"Error broadcasting file: {ex.Message}");
+                    }
                 }
             }
         }
